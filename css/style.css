@@ -915,28 +915,6 @@ body.is-playing .album-cover {
     border-radius: 50%;
 }
 
-/* 音乐可视化Canvas */
-.visualizer-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 10;
-    display: none;
-}
-
-body.visualizer-enabled .visualizer-canvas {
-    display: block;
-}
-
-body.visualizer-enabled.is-playing .visualizer-canvas {
-    opacity: 0.9;
-}
 
 .album-cover.loading {
     animation: pulse 2s infinite;
@@ -1563,28 +1541,6 @@ html:not(.mobile-view) #playModeBtn {
     border-top: 1px solid var(--border-color);
 }
 
-/* 可视化开关按钮 */
-.visualizer-toggle-btn {
-    padding: 8px 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--component-bg);
-    color: var(--text-color);
-    font-size: 0.9em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.visualizer-toggle-btn:hover {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-}
-
-.visualizer-toggle-btn.active {
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-    background: rgba(255, 107, 53, 0.1);
-}
 
 .volume-container {
     display: flex;
