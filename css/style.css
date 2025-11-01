@@ -323,20 +323,36 @@ body.background-transitioning .background-stage__layer--transition {
 }
 
 .header-search .source-option:hover {
-    background: var(--bg-hover);
+background: var(--bg-hover);
 }
 
 .header-search .source-option.active {
-    color: var(--accent-color);
-    font-weight: 500;
+color: var(--accent-color);
+font-weight: 500;
 }
 
 .header-search .source-option i {
-    font-size: 0.8em;
+font-size: 0.8em;
+}
+
+.header-search .lyrics-content > div.current {
+color: var(--text-primary);
+font-weight: 600;
+font-size: 1.15em;
+background: rgba(255, 107, 53, 0.1);
+transform: scale(1.02);
+box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
 }
 
 /* 搜索区域样式 */
 .search-area {
+grid-area: search;
+background: var(--bg-primary);
+padding: 20px;
+display: flex;
+flex-direction: column;
+gap: 15px;
+overflow: hidden;
     grid-area: search;
     background: var(--bg-primary);
     padding: 20px;
@@ -911,10 +927,15 @@ body.is-playing .album-cover {
     transition: opacity 0.3s ease;
     pointer-events: none;
     z-index: 10;
+    display: none;
 }
 
-body.is-playing .visualizer-canvas {
-    opacity: 0.8;
+body.visualizer-enabled .visualizer-canvas {
+    display: block;
+}
+
+body.visualizer-enabled.is-playing .visualizer-canvas {
+    opacity: 0.9;
 }
 
 .album-cover.loading {
@@ -1284,6 +1305,9 @@ html.mobile-view .playlist-header {
     flex-direction: column;
     align-items: stretch;
     justify-content: center;
+    background: var(--bg-secondary);
+    padding: 20px;
+    border-left: 1px solid var(--border-color);
 }
 
 .lyrics-scroll {
@@ -1312,11 +1336,15 @@ html.mobile-view .playlist-header {
 
 .lyrics-content > div {
     white-space: pre-wrap;
-    padding: 5px;
-    margin-bottom: 5px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
     word-wrap: break-word;
     overflow-wrap: break-word;
     max-width: 100%;
+    color: var(--text-secondary);
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    border-radius: 4px;
 }
 
 /* 当歌词容器只有默认文本时的样式 */
@@ -1533,6 +1561,29 @@ html:not(.mobile-view) #playModeBtn {
 .sleep-timer-option.cancel {
     color: #ff6b6b;
     border-top: 1px solid var(--border-color);
+}
+
+/* 可视化开关按钮 */
+.visualizer-toggle-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--component-bg);
+    color: var(--text-color);
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.visualizer-toggle-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.visualizer-toggle-btn.active {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: rgba(255, 107, 53, 0.1);
 }
 
 .volume-container {
@@ -2023,6 +2074,16 @@ input[type="range"]:active::-moz-range-thumb {
 .lyrics-content > div:has(.original-lyric) {
     margin-bottom: 8px;
     padding: 8px 5px;
+}
+
+/* 增强歌词高亮效果 */
+.lyrics-content > div.current {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    font-size: 1.15em !important;
+    background: rgba(255, 107, 53, 0.15) !important;
+    transform: scale(1.02);
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);
 }
 
 /* 移动端双语歌词适配 */

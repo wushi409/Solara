@@ -4774,11 +4774,15 @@ let analyser = null;
 let dataArray = null;
 let bufferLength = 0;
 let animationId = null;
+let visualizerEnabled = false;
 const canvas = document.getElementById("visualizerCanvas");
 const canvasCtx = canvas ? canvas.getContext("2d") : null;
 
+let audioSourceNode = null;
+
 function initAudioVisualizer() {
     if (!canvas || !canvasCtx) return;
+    if (audioContext) return; // 已经初始化过了
     
     try {
         // 创建AudioContext
@@ -4792,9 +4796,12 @@ function initAudioVisualizer() {
         analyser = audioContext.createAnalyser();
         analyser.fftSize = 256;
         
-        const source = audioContext.createMediaElementSource(dom.audioPlayer);
-        source.connect(analyser);
-        analyser.connect(audioContext.destination);
+        // 只创建一次source
+        if (!audioSourceNode) {
+            audioSourceNode = audioContext.createMediaElementSource(dom.audioPlayer);
+            audioSourceNode.connect(analyser);
+            analyser.connect(audioContext.destination);
+        }
         
         bufferLength = analyser.frequencyBinCount;
         dataArray = new Uint8Array(bufferLength);
@@ -4806,6 +4813,8 @@ function initAudioVisualizer() {
         debugLog("音乐可视化初始化成功");
     } catch (error) {
         console.error("音乐可视化初始化失败:", error);
+        // 如果初始化失败，确保音频仍然可以播放
+        debugLog("可视化失败，但音频应该仍然可以播放");
     }
 }
 
@@ -4881,9 +4890,34 @@ function stopVisualizer() {
     }
 }
 
+// 可视化开关按钮
+const visualizerToggle = document.getElementById("visualizerToggle");
+if (visualizerToggle) {
+    visualizerToggle.addEventListener("click", () => {
+        visualizerEnabled = !visualizerEnabled;
+        visualizerToggle.classList.toggle("active", visualizerEnabled);
+        document.body.classList.toggle("visualizer-enabled", visualizerEnabled);
+        
+        if (visualizerEnabled) {
+            initAudioVisualizer();
+            if (!dom.audioPlayer.paused) {
+                startVisualizer();
+            }
+            showNotification("音乐可视化已开启", "success");
+        } else {
+            stopVisualizer();
+            showNotification("音乐可视化已关闭", "info");
+        }
+    });
+}
+
 // 监听播放状态，自动启动/停止可视化
 if (dom.audioPlayer) {
-    dom.audioPlayer.addEventListener('play', startVisualizer);
+    dom.audioPlayer.addEventListener('play', () => {
+        if (visualizerEnabled) {
+            startVisualizer();
+        }
+    });
     dom.audioPlayer.addEventListener('pause', stopVisualizer);
     dom.audioPlayer.addEventListener('ended', stopVisualizer);
 }
