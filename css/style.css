@@ -1343,6 +1343,8 @@ html.mobile-view .playlist-header {
     justify-content: space-between;
     padding: 0 20px;
     gap: 20px;
+    position: relative;
+    z-index: 100;
 }
 .controls button {
     background: var(--primary-color);
