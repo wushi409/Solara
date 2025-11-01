@@ -107,10 +107,18 @@ body.mobile-view .container::after {
 
 body.mobile-view .header,
 body.mobile-view .theme-switch-wrapper,
-body.mobile-view .warning,
-body.mobile-view .playlist,
-body.mobile-view .lyrics,
+body.mobile-view .warning {
+    display: none !important;
+}
+
+/* 移动端显示main-content但隐藏其中的playlist和lyrics */
 body.mobile-view .main-content {
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+body.mobile-view .playlist,
+body.mobile-view .lyrics {
     display: none !important;
 }
 
