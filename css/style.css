@@ -332,27 +332,11 @@ font-weight: 500;
 }
 
 .header-search .source-option i {
-font-size: 0.8em;
-}
-
-.header-search .lyrics-content > div.current {
-color: var(--text-primary);
-font-weight: 600;
-font-size: 1.15em;
-background: rgba(255, 107, 53, 0.1);
-transform: scale(1.02);
-box-shadow: 0 2px 8px rgba(255, 107, 53, 0.2);
+    font-size: 0.8em;
 }
 
 /* 搜索区域样式 */
 .search-area {
-grid-area: search;
-background: var(--bg-primary);
-padding: 20px;
-display: flex;
-flex-direction: column;
-gap: 15px;
-overflow: hidden;
     grid-area: search;
     background: var(--bg-primary);
     padding: 20px;
