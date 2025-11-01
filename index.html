@@ -145,28 +145,19 @@
                 <div class="mobile-turntable" id="mobileTurntable">
                     <div class="mobile-turntable__platter">
                         <div class="album-cover" id="albumCover">
-                            <div class="placeholder">
-                                <i class="fas fa-music"></i>
-                            </div>
+                            <i class="fas fa-music"></i>
+                            <canvas id="visualizerCanvas" class="visualizer-canvas"></canvas>
                         </div>
-                    </div>
-                </div>
-                <div class="mobile-inline-lyrics" id="mobileInlineLyrics" aria-hidden="true">
-                    <div class="mobile-inline-lyrics__hint">
-                        <i class="fas fa-arrow-left"></i>
-                        轻触返回封面
-                    </div>
-                    <div class="mobile-inline-lyrics__scroll" id="mobileInlineLyricsScroll">
-                        <div class="mobile-inline-lyrics__content" id="mobileInlineLyricsContent"></div>
                     </div>
                 </div>
                 <div class="current-song-info">
                     <div class="current-song-title" id="currentSongTitle">选择一首歌曲开始播放</div>
                     <div class="current-song-artist" id="currentSongArtist">未知艺术家</div>
-                    <button class="mobile-quality-chip" id="mobileQualityToggle" type="button" aria-haspopup="menu" aria-expanded="false">
-                        <span id="mobileQualityLabel">极高音质</span>
-                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                    </button>
+                    <div class="mobile-inline-lyrics" id="mobileInlineLyrics" aria-hidden="true">
+                        <div class="mobile-inline-lyrics__scroll" id="mobileInlineLyricsScroll">
+                            <div class="mobile-inline-lyrics__content" id="mobileInlineLyricsContent"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
