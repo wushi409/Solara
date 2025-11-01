@@ -12,7 +12,6 @@ const dom = {
     mobileInlineLyricsScroll: document.getElementById("mobileInlineLyricsScroll"),
     mobileInlineLyricsContent: document.getElementById("mobileInlineLyricsContent"),
     audioPlayer: document.getElementById("audioPlayer"),
-    themeToggleButton: document.getElementById("themeToggleButton"),
     loadOnlineBtn: document.getElementById("loadOnlineBtn"),
     showPlaylistBtn: document.getElementById("showPlaylistBtn"),
     showLyricsBtn: document.getElementById("showLyricsBtn"),
@@ -2310,29 +2309,10 @@ function setupInteractions() {
         dom.playlistItems.addEventListener("keydown", handleKeydown);
     }
 
-    function applyTheme(isDark) {
-        if (!state.themeDefaultsCaptured) {
-            captureThemeDefaults();
-        }
-        document.body.classList.toggle("dark-mode", isDark);
-        dom.themeToggleButton.classList.toggle("is-dark", isDark);
-        const label = isDark ? "切换为浅色模式" : "切换为深色模式";
-        dom.themeToggleButton.setAttribute("aria-label", label);
-        dom.themeToggleButton.setAttribute("title", label);
-        applyDynamicGradient();
-    }
-
+    // 强制应用深色主题
     captureThemeDefaults();
-    const savedTheme = safeGetLocalStorage("theme");
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initialIsDark = savedTheme ? savedTheme === "dark" : prefersDark;
-    applyTheme(initialIsDark);
-
-    dom.themeToggleButton.addEventListener("click", () => {
-        const isDark = !document.body.classList.contains("dark-mode");
-        applyTheme(isDark);
-        safeSetLocalStorage("theme", isDark ? "dark" : "light");
-    });
+    document.body.classList.add("dark-mode");
+    applyDynamicGradient();
 
     dom.audioPlayer.volume = state.volume;
     dom.volumeSlider.value = state.volume;
