@@ -86,6 +86,22 @@
         <div class="header">
             <h1>Solara</h1>
             <div class="warning">Made by Wet Dream Boy，免费API来自GD音乐台(music.gdstudio.xyz)，仅供学习交流使用，请支持正版音乐奥！</div>
+            <div class="header-search">
+                <input type="text" id="headerSearchInput" class="search-input" placeholder="搜索歌曲、歌手或专辑...">
+                <div class="source-select">
+                    <button id="headerSourceSelectButton" class="source-select-btn" type="button" aria-haspopup="menu" aria-expanded="false">
+                        <span id="headerSourceSelectLabel">网易云音乐</span>
+                        <i class="fas fa-chevron-down caret-icon" aria-hidden="true"></i>
+                    </button>
+                    <div id="headerSourceMenu" class="source-menu" role="menu" aria-hidden="true">
+                        <!-- 音乐源选项将由JavaScript动态生成 -->
+                    </div>
+                </div>
+                <button id="headerSearchBtn" class="search-btn" type="button">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    搜索
+                </button>
+            </div>
             <div class="theme-switch-wrapper">
                 <button id="themeToggleButton" class="theme-toggle-button" type="button" aria-label="切换深浅色模式">
                     <i class="fas fa-sun theme-icon theme-icon--sun" aria-hidden="true"></i>

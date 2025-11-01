@@ -18,6 +18,11 @@ const dom = {
     showLyricsBtn: document.getElementById("showLyricsBtn"),
     searchInput: document.getElementById("searchInput"),
     searchBtn: document.getElementById("searchBtn"),
+    headerSearchInput: document.getElementById("headerSearchInput"),
+    headerSearchBtn: document.getElementById("headerSearchBtn"),
+    headerSourceSelectButton: document.getElementById("headerSourceSelectButton"),
+    headerSourceSelectLabel: document.getElementById("headerSourceSelectLabel"),
+    headerSourceMenu: document.getElementById("headerSourceMenu"),
     sourceSelectButton: document.getElementById("sourceSelectButton"),
     sourceSelectLabel: document.getElementById("sourceSelectLabel"),
     sourceMenu: document.getElementById("sourceMenu"),
@@ -486,9 +491,9 @@ const savedCurrentPlaylist = (() => {
     return playlists.includes(stored) ? stored : "playlist";
 })();
 
-// API配置 - 修复API地址和请求方式
+// API配置 - 使用本地代理服务器
 const API = {
-    baseUrl: "/proxy",
+    baseUrl: "http://localhost:3001/proxy",
 
     generateSignature: () => {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -496,25 +501,40 @@ const API = {
 
     fetchJson: async (url) => {
         try {
+            debugLog(`发起API请求: ${url}`);
             const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
                 headers: {
                     "Accept": "application/json",
-                },
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
             });
 
+            debugLog(`API响应状态: ${response.status}`);
+            debugLog(`API响应类型: ${response.headers.get('content-type')}`);
+            
             if (!response.ok) {
+                const errorText = await response.text();
+                debugLog(`API错误响应: ${errorText.substring(0, 200)}`);
                 throw new Error(`Request failed with status ${response.status}`);
             }
 
-            const text = await response.text();
-            try {
-                return JSON.parse(text);
-            } catch (parseError) {
-                console.warn("JSON parse failed, returning raw text", parseError);
-                return text;
+            // 检查响应类型
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const responseText = await response.text();
+                console.error('Error processing response text:', responseText.substring(0, 200));
+                debugLog(`非JSON响应: ${responseText.substring(0, 200)}`);
+                throw new Error('API返回的不是JSON格式');
             }
+
+            const data = await response.json();
+            debugLog(`API响应数据: ${JSON.stringify(data).substring(0, 200)}`);
+            return data;
         } catch (error) {
             console.error("API request error:", error);
+            debugLog(`API请求失败: ${error.message}`);
             throw error;
         }
     },
@@ -1694,30 +1714,47 @@ async function togglePlayPause() {
 }
 
 function buildSourceMenu() {
-    if (!dom.sourceMenu) return;
     const optionsHtml = SOURCE_OPTIONS.map(option => {
         const isActive = option.value === state.searchSource;
         return `
             <div class="source-option${isActive ? " active" : ""}" data-source="${option.value}" role="option" aria-selected="${isActive}">
                 <span>${option.label}</span>
-                ${isActive ? '<i class="fas fa-check" aria-hidden="true"></i>' : ""}
+                ${isActive ? '<i class="fas fa-check" aria-hidden="true"></i>' : ''}
             </div>
         `;
     }).join("");
-    dom.sourceMenu.innerHTML = optionsHtml;
-    if (state.sourceMenuOpen) {
-        scheduleSourceMenuPositionUpdate();
+    
+    // 构建主搜索区域的音乐源菜单
+    if (dom.sourceMenu) {
+        dom.sourceMenu.innerHTML = optionsHtml;
+    }
+    
+    // 构建头部搜索区域的音乐源菜单
+    if (dom.headerSourceMenu) {
+        dom.headerSourceMenu.innerHTML = optionsHtml;
     }
 }
 
 function updateSourceLabel() {
     const option = SOURCE_OPTIONS.find(item => item.value === state.searchSource) || SOURCE_OPTIONS[0];
-    if (!option || !dom.sourceSelectLabel || !dom.sourceSelectButton) return;
-    dom.sourceSelectLabel.textContent = option.label;
-    dom.sourceSelectButton.dataset.source = option.value;
-    dom.sourceSelectButton.setAttribute("aria-expanded", state.sourceMenuOpen ? "true" : "false");
-    dom.sourceSelectButton.setAttribute("aria-label", `当前音源：${option.label}，点击切换音源`);
-    dom.sourceSelectButton.setAttribute("title", `音源：${option.label}`);
+    if (!option) return;
+    
+    // 更新主搜索区域的音乐源标签
+    if (dom.sourceSelectLabel && dom.sourceSelectButton) {
+        dom.sourceSelectLabel.textContent = option.label;
+        dom.sourceSelectButton.dataset.source = option.value;
+        dom.sourceSelectButton.setAttribute("aria-expanded", state.sourceMenuOpen ? "true" : "false");
+        dom.sourceSelectButton.setAttribute("aria-label", `当前音源：${option.label}，点击切换音源`);
+        dom.sourceSelectButton.setAttribute("title", `音源：${option.label}`);
+    }
+    
+    // 更新头部搜索区域的音乐源标签
+    if (dom.headerSourceSelectLabel && dom.headerSourceSelectButton) {
+        dom.headerSourceSelectLabel.textContent = option.label;
+        dom.headerSourceSelectButton.dataset.source = option.value;
+        dom.headerSourceSelectButton.setAttribute("aria-label", `当前音源：${option.label}，点击切换音源`);
+        dom.headerSourceSelectButton.setAttribute("title", `音源：${option.label}`);
+    }
 }
 
 function updateSourceMenuPosition() {
@@ -1813,6 +1850,7 @@ function selectSearchSource(source) {
     const normalized = normalizeSource(source);
     if (normalized === state.searchSource) {
         closeSourceMenu();
+        closeHeaderSourceMenu();
         return;
     }
     state.searchSource = normalized;
@@ -1820,6 +1858,46 @@ function selectSearchSource(source) {
     updateSourceLabel();
     buildSourceMenu();
     closeSourceMenu();
+    closeHeaderSourceMenu();
+}
+
+// 头部音乐源选择功能
+let headerSourceMenuOpen = false;
+
+function toggleHeaderSourceMenu() {
+    if (headerSourceMenuOpen) {
+        closeHeaderSourceMenu();
+    } else {
+        openHeaderSourceMenu();
+    }
+}
+
+function openHeaderSourceMenu() {
+    if (!dom.headerSourceMenu || !dom.headerSourceSelectButton) return;
+    headerSourceMenuOpen = true;
+    buildSourceMenu();
+    dom.headerSourceMenu.classList.add("show");
+    dom.headerSourceSelectButton.classList.add("active");
+    dom.headerSourceSelectButton.setAttribute("aria-expanded", "true");
+}
+
+function closeHeaderSourceMenu() {
+    if (!dom.headerSourceMenu || !dom.headerSourceSelectButton) return;
+    dom.headerSourceMenu.classList.remove("show");
+    dom.headerSourceSelectButton.classList.remove("active");
+    dom.headerSourceSelectButton.setAttribute("aria-expanded", "false");
+    headerSourceMenuOpen = false;
+}
+
+function handleHeaderSourceSelection(event) {
+    const option = event.target.closest(".source-option");
+    if (!option) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const { source } = option.dataset;
+    if (source) {
+        selectSearchSource(source);
+    }
 }
 
 function buildQualityMenu() {
@@ -2350,28 +2428,184 @@ function setupInteractions() {
         });
     }
 
-    // 播放模式按钮事件
-    updatePlayModeUI();
-    dom.playModeBtn.addEventListener("click", togglePlayMode);
+// 主题初始化已在上面处理，这里删除重复代码
 
-    // 搜索相关事件 - 修复搜索下拉框显示问题
-    dom.searchBtn.addEventListener("click", (e) => {
+dom.audioPlayer.volume = state.volume;
+dom.volumeSlider.value = state.volume;
+updateVolumeSliderBackground(state.volume);
+updateVolumeIcon(state.volume);
+
+buildSourceMenu();
+updateSourceLabel();
+buildQualityMenu();
+ensureQualityMenuPortal();
+initializePlaylistEventHandlers();
+updateQualityLabel();
+updatePlayPauseButton();
+dom.currentTimeDisplay.textContent = formatTime(state.currentPlaybackTime);
+updateProgressBarBackground(0, Number(dom.progressBar.max));
+
+dom.playPauseBtn.addEventListener("click", togglePlayPause);
+dom.audioPlayer.addEventListener("timeupdate", handleTimeUpdate);
+dom.audioPlayer.addEventListener("loadedmetadata", handleLoadedMetadata);
+dom.audioPlayer.addEventListener("play", updatePlayPauseButton);
+dom.audioPlayer.addEventListener("pause", updatePlayPauseButton);
+dom.audioPlayer.addEventListener("volumechange", onAudioVolumeChange);
+
+dom.progressBar.addEventListener("input", handleProgressInput);
+dom.progressBar.addEventListener("change", handleProgressChange);
+dom.progressBar.addEventListener("pointerup", handleProgressChange);
+
+dom.volumeSlider.addEventListener("input", handleVolumeChange);
+
+if (dom.sourceSelectButton && dom.sourceMenu) {
+    dom.sourceSelectButton.addEventListener("click", toggleSourceMenu);
+    dom.sourceMenu.addEventListener("click", handleSourceSelection);
+}
+
+// 头部音乐源选择事件
+if (dom.headerSourceSelectButton && dom.headerSourceMenu) {
+    dom.headerSourceSelectButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleHeaderSourceMenu();
+    });
+    dom.headerSourceMenu.addEventListener("click", handleHeaderSourceSelection);
+}
+dom.qualityToggle.addEventListener("click", togglePlayerQualityMenu);
+if (dom.mobileQualityToggle) {
+    dom.mobileQualityToggle.addEventListener("click", togglePlayerQualityMenu);
+}
+setQualityAnchorState(dom.qualityToggle, false);
+if (dom.mobileQualityToggle) {
+    setQualityAnchorState(dom.mobileQualityToggle, false);
+}
+dom.playerQualityMenu.addEventListener("click", handlePlayerQualitySelection);
+
+if (isMobileView && dom.albumCover) {
+    dom.albumCover.addEventListener("click", () => {
+        toggleMobileInlineLyrics();
+    });
+}
+
+if (isMobileView && dom.mobileInlineLyrics) {
+    dom.mobileInlineLyrics.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!state.isMobileInlineLyricsOpen) {
+            return;
+        }
+        closeMobileInlineLyrics();
+    });
+}
+
+dom.loadOnlineBtn.addEventListener("click", exploreOnlineMusic);
+if (dom.mobileExploreButton) {
+    dom.mobileExploreButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closeAllMobileOverlays();
+        exploreOnlineMusic();
+    });
+}
+
+if (dom.importPlaylistBtn && dom.importPlaylistInput) {
+    dom.importPlaylistBtn.addEventListener("click", () => {
+        dom.importPlaylistInput.value = "";
+        dom.importPlaylistInput.click();
+    });
+    dom.importPlaylistInput.addEventListener("change", handleImportPlaylistChange);
+}
+
+if (dom.exportPlaylistBtn) {
+    dom.exportPlaylistBtn.addEventListener("click", exportPlaylist);
+}
+
+if (dom.mobileImportPlaylistBtn && dom.importPlaylistInput) {
+    dom.mobileImportPlaylistBtn.addEventListener("click", () => {
+        dom.importPlaylistInput.value = "";
+        dom.importPlaylistInput.click();
+    });
+}
+
+if (dom.mobileExportPlaylistBtn) {
+    dom.mobileExportPlaylistBtn.addEventListener("click", exportPlaylist);
+}
+
+if (dom.showPlaylistBtn) {
+    dom.showPlaylistBtn.addEventListener("click", () => {
+        if (isMobileView) {
+            openMobilePanel("playlist");
+        } else {
+            switchMobileView("playlist");
+        }
+    });
+}
+if (dom.showLyricsBtn) {
+    dom.showLyricsBtn.addEventListener("click", () => {
+        if (isMobileView) {
+            openMobilePanel("lyrics");
+        } else {
+            switchMobileView("lyrics");
+        }
+    });
+}
+
+// 播放模式按钮事件
+updatePlayModeUI();
+dom.playModeBtn.addEventListener("click", togglePlayMode);
+
+// 头部搜索功能
+if (dom.headerSearchBtn && dom.headerSearchInput) {
+    dom.headerSearchBtn.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        debugLog("搜索按钮被点击");
-        performSearch();
-    });
-
-    dom.searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            e.stopPropagation();
-            debugLog("搜索输入框回车键被按下");
+        debugLog("头部搜索按钮被点击");
+        const keyword = dom.headerSearchInput.value.trim();
+        if (keyword) {
+            // 同步到主搜索框
+            if (dom.searchInput) {
+                dom.searchInput.value = keyword;
+            }
+            state.searchKeyword = keyword;
             performSearch();
         }
     });
 
-    updateImportSelectedButton();
+    dom.headerSearchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            debugLog("头部搜索输入框回车键被按下");
+            const keyword = dom.headerSearchInput.value.trim();
+            if (keyword) {
+                // 同步到主搜索框
+                if (dom.searchInput) {
+                    dom.searchInput.value = keyword;
+                }
+                state.searchKeyword = keyword;
+                performSearch();
+            }
+        }
+    });
+}
+
+// 搜索相关事件
+dom.searchBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    debugLog("搜索按钮被点击");
+    performSearch();
+});
+
+dom.searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        debugLog("搜索输入框回车键被按下");
+        performSearch();
+    }
+});
+
+updateImportSelectedButton();
     if (dom.importSelectedBtn) {
         dom.importSelectedBtn.addEventListener("click", (event) => {
             event.preventDefault();
@@ -3975,7 +4209,17 @@ async function loadLyrics(song) {
         const lyricData = await API.fetchJson(lyricUrl);
 
         if (lyricData && lyricData.lyric) {
-            parseLyrics(lyricData.lyric);
+            // 检查是否有中文翻译
+            const hasTranslation = lyricData.tlyric && lyricData.tlyric.trim();
+            
+            if (hasTranslation) {
+                debugLog("检测到翻译歌词，使用双语模式");
+                parseBilingualLyrics(lyricData.lyric, lyricData.tlyric);
+            } else {
+                debugLog("无翻译歌词，使用单语模式");
+                parseLyrics(lyricData.lyric);
+            }
+            
             dom.lyrics.classList.remove("empty");
             dom.lyrics.dataset.placeholder = "default";
         } else {
@@ -3997,6 +4241,25 @@ async function loadLyrics(song) {
 
 // 修复：解析歌词
 function parseLyrics(lyricText) {
+    const lyrics = parseLyricLines(lyricText);
+    state.lyricsData = lyrics.sort((a, b) => a.time - b.time);
+    displayLyrics();
+}
+
+// 新增：解析双语歌词
+function parseBilingualLyrics(originalLyric, translatedLyric) {
+    const originalLines = parseLyricLines(originalLyric);
+    const translatedLines = parseLyricLines(translatedLyric);
+    
+    // 合并同时间点的歌词
+    const mergedLyrics = mergeLyricsByTime(originalLines, translatedLines);
+    
+    state.lyricsData = mergedLyrics.sort((a, b) => a.time - b.time);
+    displayLyrics();
+}
+
+// 新增：解析歌词行（提取公共逻辑）
+function parseLyricLines(lyricText) {
     const lines = lyricText.split('\n');
     const lyrics = [];
 
@@ -4015,8 +4278,48 @@ function parseLyrics(lyricText) {
         }
     });
 
-    state.lyricsData = lyrics.sort((a, b) => a.time - b.time);
-    displayLyrics();
+    return lyrics;
+}
+
+// 新增：按时间合并歌词
+function mergeLyricsByTime(originalLines, translatedLines) {
+    const mergedMap = new Map();
+    
+    // 添加原文歌词
+    originalLines.forEach(line => {
+        const key = line.time.toFixed(2);
+        if (!mergedMap.has(key)) {
+            mergedMap.set(key, { time: line.time, original: '', translated: '' });
+        }
+        mergedMap.get(key).original = line.text;
+    });
+    
+    // 添加翻译歌词
+    translatedLines.forEach(line => {
+        const key = line.time.toFixed(2);
+        if (!mergedMap.has(key)) {
+            mergedMap.set(key, { time: line.time, original: '', translated: '' });
+        }
+        mergedMap.get(key).translated = line.text;
+    });
+    
+    // 转换为数组并生成显示文本
+    return Array.from(mergedMap.values()).map(item => {
+        let displayText = '';
+        if (item.original && item.translated) {
+            displayText = `<div class="original-lyric">${item.original}</div><div class="translated-lyric">${item.translated}</div>`;
+        } else if (item.original) {
+            displayText = `<div class="original-lyric">${item.original}</div>`;
+        } else if (item.translated) {
+            displayText = `<div class="translated-lyric">${item.translated}</div>`;
+        }
+        
+        return {
+            time: item.time,
+            text: displayText,
+            isBilingual: !!(item.original && item.translated)
+        };
+    }).filter(item => item.text);
 }
 
 function setLyricsContentHtml(html) {
