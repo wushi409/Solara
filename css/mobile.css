@@ -378,8 +378,9 @@ body.mobile-view .controls {
     border: none;
     box-shadow: none;
     margin: 0;
-    padding: 20px;
-    gap: 20px;
+    padding: 30px 20px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+    gap: 25px;
     align-items: stretch;
     flex-direction: column;
 }
@@ -432,9 +433,9 @@ body.mobile-view .transport-controls {
     order: 2;
     width: 100%;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    gap: clamp(12px, 5vw, 18px);
+    gap: 20px;
 }
 
 body.mobile-view .transport-button {
@@ -472,6 +473,12 @@ body.mobile-view .transport-button:active {
 
 body.mobile-view #mobileQueueToggle {
     display: inline-flex;
+}
+
+/* 隐藏移动端不需要的按钮 */
+body.mobile-view .transport-button--favorite,
+body.mobile-view .transport-button--queue {
+    display: none;
 }
 
 body.mobile-view .audio-tools {
