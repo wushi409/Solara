@@ -291,6 +291,18 @@
                     </button>
                     <div id="playerQualityMenu" class="player-quality-menu"></div>
                 </div>
+                <div class="sleep-timer">
+                    <button id="sleepTimerBtn" class="sleep-timer-btn" type="button" title="定时关闭">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <div id="sleepTimerMenu" class="sleep-timer-menu">
+                        <div class="sleep-timer-option" data-minutes="15">15分钟</div>
+                        <div class="sleep-timer-option" data-minutes="30">30分钟</div>
+                        <div class="sleep-timer-option" data-minutes="45">45分钟</div>
+                        <div class="sleep-timer-option" data-minutes="60">60分钟</div>
+                        <div class="sleep-timer-option cancel" data-minutes="0">取消定时</div>
+                    </div>
+                </div>
                 <div class="volume-container">
                     <i id="volumeIcon" class="fas fa-volume-up"></i>
                     <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">

@@ -692,6 +692,8 @@ const state = {
     selectedSearchResults: new Set(),
     favorites: savedFavorites, // 收藏列表
     playHistory: savedPlayHistory, // 播放历史
+    sleepTimer: null, // 定时关闭计时器
+    sleepTimerEndTime: null, // 定时关闭结束时间
 };
 
 // ==== Media Session integration (Safari/iOS Lock Screen) ====
@@ -2578,6 +2580,41 @@ if (favoriteBtn) {
             toggleFavorite(state.currentSong);
         } else {
             showNotification("请先播放一首歌曲", "info");
+        }
+    });
+}
+
+// 定时关闭功能事件
+const sleepTimerBtn = document.getElementById("sleepTimerBtn");
+const sleepTimerMenu = document.getElementById("sleepTimerMenu");
+let sleepTimerMenuOpen = false;
+
+if (sleepTimerBtn && sleepTimerMenu) {
+    sleepTimerBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        sleepTimerMenuOpen = !sleepTimerMenuOpen;
+        sleepTimerMenu.classList.toggle("show", sleepTimerMenuOpen);
+    });
+    
+    sleepTimerMenu.addEventListener("click", (e) => {
+        const option = e.target.closest(".sleep-timer-option");
+        if (!option) return;
+        
+        const minutes = parseInt(option.dataset.minutes);
+        setSleepTimer(minutes);
+        
+        sleepTimerMenuOpen = false;
+        sleepTimerMenu.classList.remove("show");
+    });
+    
+    // 点击外部关闭菜单
+    document.addEventListener("click", (e) => {
+        if (sleepTimerMenuOpen && 
+            !sleepTimerBtn.contains(e.target) && 
+            !sleepTimerMenu.contains(e.target)) {
+            sleepTimerMenuOpen = false;
+            sleepTimerMenu.classList.remove("show");
         }
     });
 }
@@ -4660,3 +4697,73 @@ function renderFavorites() {
     // 这个函数将在添加UI后实现
     debugLog(`收藏列表: ${state.favorites.length} 首歌曲`);
 }
+
+// ========== 定时关闭功能 ==========
+function setSleepTimer(minutes) {
+    // 清除现有定时器
+    if (state.sleepTimer) {
+        clearTimeout(state.sleepTimer);
+        state.sleepTimer = null;
+        state.sleepTimerEndTime = null;
+    }
+    
+    if (minutes <= 0) {
+        showNotification("定时关闭已取消", "info");
+        updateSleepTimerButton();
+        return;
+    }
+    
+    const milliseconds = minutes * 60 * 1000;
+    state.sleepTimerEndTime = Date.now() + milliseconds;
+    
+    state.sleepTimer = setTimeout(() => {
+        // 停止播放
+        dom.audioPlayer.pause();
+        showNotification("定时关闭：播放已停止", "info");
+        state.sleepTimer = null;
+        state.sleepTimerEndTime = null;
+        updateSleepTimerButton();
+    }, milliseconds);
+    
+    showNotification(`定时关闭已设置：${minutes}分钟后停止播放`, "success");
+    updateSleepTimerButton();
+}
+
+function cancelSleepTimer() {
+    if (state.sleepTimer) {
+        clearTimeout(state.sleepTimer);
+        state.sleepTimer = null;
+        state.sleepTimerEndTime = null;
+        showNotification("定时关闭已取消", "info");
+        updateSleepTimerButton();
+    }
+}
+
+function getRemainingTime() {
+    if (!state.sleepTimerEndTime) return 0;
+    const remaining = Math.max(0, state.sleepTimerEndTime - Date.now());
+    return Math.ceil(remaining / 60000); // 转换为分钟
+}
+
+function updateSleepTimerButton() {
+    const sleepTimerBtn = document.getElementById("sleepTimerBtn");
+    if (!sleepTimerBtn) return;
+    
+    if (state.sleepTimer) {
+        const remaining = getRemainingTime();
+        sleepTimerBtn.classList.add("active");
+        sleepTimerBtn.title = `定时关闭：剩余${remaining}分钟`;
+        sleepTimerBtn.innerHTML = `<i class="fas fa-moon"></i><span class="timer-text">${remaining}分</span>`;
+    } else {
+        sleepTimerBtn.classList.remove("active");
+        sleepTimerBtn.title = "定时关闭";
+        sleepTimerBtn.innerHTML = `<i class="fas fa-moon"></i>`;
+    }
+}
+
+// 每分钟更新一次定时器显示
+setInterval(() => {
+    if (state.sleepTimer) {
+        updateSleepTimerButton();
+    }
+}, 60000);

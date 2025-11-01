@@ -1443,6 +1443,80 @@ html:not(.mobile-view) #playModeBtn {
     flex-wrap: wrap;
 }
 
+/* 定时关闭功能样式 */
+.sleep-timer {
+    position: relative;
+}
+
+.sleep-timer-btn {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--component-bg);
+    color: var(--text-color);
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sleep-timer-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.sleep-timer-btn.active {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: rgba(255, 107, 53, 0.1);
+}
+
+.sleep-timer-btn .timer-text {
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.sleep-timer-menu {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    min-width: 120px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.sleep-timer-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.sleep-timer-option {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: var(--text-primary);
+    font-size: 0.9em;
+}
+
+.sleep-timer-option:hover {
+    background: var(--bg-hover);
+}
+
+.sleep-timer-option.cancel {
+    color: #ff6b6b;
+    border-top: 1px solid var(--border-color);
+}
+
 .volume-container {
     display: flex;
     align-items: center;
