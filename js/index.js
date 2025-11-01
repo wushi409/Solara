@@ -504,9 +504,9 @@ const savedPlayHistory = (() => {
     return Array.isArray(history) ? history : [];
 })();
 
-// API配置 - 使用本地代理服务器
+// API配置 - 直接访问API
 const API = {
-    baseUrl: "http://localhost:3001/proxy",
+    baseUrl: "https://music-api.gdstudio.xyz/api.php",
 
     generateSignature: () => {
         return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
