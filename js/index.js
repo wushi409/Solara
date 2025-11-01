@@ -491,6 +491,19 @@ const savedCurrentPlaylist = (() => {
     return playlists.includes(stored) ? stored : "playlist";
 })();
 
+// 收藏和历史记录功能
+const savedFavorites = (() => {
+    const stored = safeGetLocalStorage("favorites");
+    const favorites = parseJSON(stored, []);
+    return Array.isArray(favorites) ? favorites : [];
+})();
+
+const savedPlayHistory = (() => {
+    const stored = safeGetLocalStorage("playHistory");
+    const history = parseJSON(stored, []);
+    return Array.isArray(history) ? history : [];
+})();
+
 // API配置 - 使用本地代理服务器
 const API = {
     baseUrl: "http://localhost:3001/proxy",
@@ -677,6 +690,8 @@ const state = {
     currentGradient: '',
     isMobileInlineLyricsOpen: false,
     selectedSearchResults: new Set(),
+    favorites: savedFavorites, // 收藏列表
+    playHistory: savedPlayHistory, // 播放历史
 };
 
 // ==== Media Session integration (Safari/iOS Lock Screen) ====
@@ -2555,6 +2570,18 @@ if (dom.showLyricsBtn) {
 updatePlayModeUI();
 dom.playModeBtn.addEventListener("click", togglePlayMode);
 
+// 收藏按钮事件
+const favoriteBtn = document.getElementById("favoriteBtn");
+if (favoriteBtn) {
+    favoriteBtn.addEventListener("click", () => {
+        if (state.currentSong) {
+            toggleFavorite(state.currentSong);
+        } else {
+            showNotification("请先播放一首歌曲", "info");
+        }
+    });
+}
+
 // 头部搜索功能
 if (dom.headerSearchBtn && dom.headerSearchInput) {
     dom.headerSearchBtn.addEventListener("click", (e) => {
@@ -3990,6 +4017,12 @@ async function playSong(song, options = {}) {
         scheduleDeferredSongAssets(song, playPromise);
 
         debugLog(`开始播放: ${song.name} @${quality}`);
+        
+        // 添加到播放历史
+        addToHistory(song);
+        
+        // 更新收藏按钮状态
+        updateFavoriteButton();
 
         if (typeof window.__SOLARA_UPDATE_MEDIA_METADATA === 'function') {
             window.__SOLARA_UPDATE_MEDIA_METADATA();
@@ -4530,4 +4563,100 @@ function showNotification(message, type = "success") {
     setTimeout(() => {
         notification.classList.remove("show");
     }, 3000);
+}
+
+// ========== 收藏功能 ==========
+function isFavorite(song) {
+    if (!song || !song.id) return false;
+    return state.favorites.some(fav => fav.id === song.id && fav.source === song.source);
+}
+
+function toggleFavorite(song) {
+    if (!song || !song.id) return;
+    
+    if (isFavorite(song)) {
+        // 取消收藏
+        state.favorites = state.favorites.filter(fav => !(fav.id === song.id && fav.source === song.source));
+        showNotification("已取消收藏", "info");
+    } else {
+        // 添加收藏
+        const favoriteItem = {
+            id: song.id,
+            name: song.name,
+            artist: song.artist,
+            album: song.album,
+            pic_id: song.pic_id,
+            url_id: song.url_id,
+            lyric_id: song.lyric_id,
+            source: song.source,
+            addedAt: Date.now()
+        };
+        state.favorites.unshift(favoriteItem);
+        showNotification(`已收藏《${song.name}》`, "success");
+    }
+    
+    // 保存到localStorage
+    safeSetLocalStorage("favorites", JSON.stringify(state.favorites));
+    
+    // 更新UI
+    updateFavoriteButton();
+}
+
+function updateFavoriteButton() {
+    const favoriteBtn = document.getElementById("favoriteBtn");
+    if (!favoriteBtn || !state.currentSong) return;
+    
+    const isFav = isFavorite(state.currentSong);
+    favoriteBtn.innerHTML = `<i class="fas fa-heart${isFav ? '' : '-o'}"></i>`;
+    favoriteBtn.classList.toggle("active", isFav);
+    favoriteBtn.title = isFav ? "取消收藏" : "收藏";
+}
+
+// ========== 播放历史功能 ==========
+function addToHistory(song) {
+    if (!song || !song.id) return;
+    
+    // 移除已存在的相同歌曲
+    state.playHistory = state.playHistory.filter(item => !(item.id === song.id && item.source === song.source));
+    
+    // 添加到历史记录开头
+    const historyItem = {
+        id: song.id,
+        name: song.name,
+        artist: song.artist,
+        album: song.album,
+        pic_id: song.pic_id,
+        url_id: song.url_id,
+        lyric_id: song.lyric_id,
+        source: song.source,
+        playedAt: Date.now()
+    };
+    state.playHistory.unshift(historyItem);
+    
+    // 限制历史记录数量为100首
+    if (state.playHistory.length > 100) {
+        state.playHistory = state.playHistory.slice(0, 100);
+    }
+    
+    // 保存到localStorage
+    safeSetLocalStorage("playHistory", JSON.stringify(state.playHistory));
+}
+
+function clearHistory() {
+    if (confirm("确定要清空播放历史吗？")) {
+        state.playHistory = [];
+        safeSetLocalStorage("playHistory", JSON.stringify([]));
+        showNotification("播放历史已清空", "info");
+        renderHistory();
+    }
+}
+
+function renderHistory() {
+    // 这个函数将在添加UI后实现
+    debugLog(`播放历史: ${state.playHistory.length} 首歌曲`);
+}
+
+function renderFavorites() {
+    // 这个函数将在添加UI后实现
+    debugLog(`收藏列表: ${state.favorites.length} 首歌曲`);
 }
